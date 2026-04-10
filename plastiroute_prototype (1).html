@@ -1,0 +1,2176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PlastiRoute — Rural Plastic Waste Management</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --green-deep: #0d3b2e;
+    --green-mid: #1a5c43;
+    --green-bright: #2d8a5e;
+    --green-light: #5bc49a;
+    --green-pale: #c8f0df;
+    --amber: #f59e0b;
+    --amber-pale: #fef3c7;
+    --coral: #e45c3a;
+    --blue: #3b82f6;
+    --blue-pale: #dbeafe;
+    --ink: #0f1c14;
+    --ink-mid: #2d3d35;
+    --ink-light: #5a6e63;
+    --surface: #f4f9f6;
+    --surface-card: #ffffff;
+    --border: #d4e8dc;
+    --font: 'Space Grotesk', sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font);
+    background: var(--surface);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  /* ── TOP NAV ── */
+  .nav {
+    background: var(--green-deep);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    height: 56px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .nav-logo {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--green-light);
+    letter-spacing: -0.5px;
+    margin-right: 32px;
+  }
+  .nav-logo span { color: #fff; }
+  .nav-tabs {
+    display: flex;
+    height: 100%;
+    gap: 2px;
+  }
+  .nav-tab {
+    height: 100%;
+    padding: 0 18px;
+    font-size: 13px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.5);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .nav-tab:hover { color: rgba(255,255,255,0.85); }
+  .nav-tab.active {
+    color: var(--green-light);
+    border-bottom-color: var(--green-light);
+  }
+  .nav-badge {
+    background: var(--green-bright);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 99px;
+    margin-left: 6px;
+  }
+  .nav-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--green-light);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  .nav-user {
+    font-size: 12px;
+    color: rgba(255,255,255,0.5);
+  }
+
+  /* ── PAGES ── */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ── DASHBOARD ── */
+  .dash-header {
+    background: var(--green-deep);
+    padding: 28px 28px 48px;
+    color: #fff;
+  }
+  .dash-header h1 {
+    font-size: 22px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 4px;
+  }
+  .dash-header p {
+    font-size: 13px;
+    color: rgba(255,255,255,0.55);
+  }
+  .dash-body { padding: 24px 28px; margin-top: -24px; }
+
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .metric-card {
+    background: var(--surface-card);
+    border-radius: 12px;
+    padding: 18px 20px;
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  .metric-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--accent, var(--green-bright));
+    border-radius: 12px 12px 0 0;
+  }
+  .metric-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--ink-light);
+    margin-bottom: 8px;
+  }
+  .metric-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1;
+    margin-bottom: 6px;
+    font-family: var(--mono);
+  }
+  .metric-sub {
+    font-size: 12px;
+    color: var(--ink-light);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .metric-trend-up { color: var(--green-bright); }
+  .metric-trend-down { color: var(--coral); }
+
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .card {
+    background: var(--surface-card);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .card-head {
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .card-head h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .card-head .sub {
+    font-size: 12px;
+    color: var(--ink-light);
+    margin-top: 1px;
+  }
+  .card-body { padding: 16px 20px; }
+
+  .badge {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 10px;
+    border-radius: 99px;
+  }
+  .badge-green { background: var(--green-pale); color: var(--green-mid); }
+  .badge-amber { background: var(--amber-pale); color: #b45309; }
+  .badge-blue { background: var(--blue-pale); color: #1d4ed8; }
+  .badge-red { background: #fee2e2; color: #b91c1c; }
+
+  /* ── MAP PAGE ── */
+  .map-container {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    height: calc(100vh - 56px);
+  }
+  .map-sidebar {
+    background: var(--surface-card);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+  .map-sidebar-head {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--surface-card);
+    z-index: 5;
+  }
+  .map-sidebar-head h2 {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+  .route-controls { display: flex; flex-direction: column; gap: 8px; }
+  .control-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+  }
+  .control-row label { color: var(--ink-light); font-weight: 500; }
+  .control-val { font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--green-mid); }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--border);
+    outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--green-bright);
+    cursor: pointer;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--font);
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+  }
+  .btn-primary {
+    background: var(--green-bright);
+    color: #fff;
+  }
+  .btn-primary:hover { background: var(--green-mid); }
+  .btn-outline {
+    background: transparent;
+    color: var(--green-mid);
+    border: 1px solid var(--green-bright);
+  }
+  .btn-outline:hover { background: var(--green-pale); }
+  .btn-sm { padding: 5px 12px; font-size: 12px; }
+
+  .village-list { padding: 12px; display: flex; flex-direction: column; gap: 6px; }
+  .village-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+    border: 1px solid transparent;
+  }
+  .village-item:hover { background: var(--surface); border-color: var(--border); }
+  .village-item.selected { background: var(--green-pale); border-color: var(--green-bright); }
+  .village-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .village-name { font-size: 13px; font-weight: 500; flex: 1; }
+  .village-kg {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-light);
+    text-align: right;
+  }
+
+  /* MAP SVG */
+  .map-view { flex: 1; background: #e8f0eb; position: relative; overflow: hidden; }
+  #map-svg { width: 100%; height: 100%; }
+
+  .map-node { cursor: pointer; }
+  .map-node circle { transition: r 0.2s; }
+  .map-node:hover circle { r: 14; }
+  .map-tooltip {
+    position: absolute;
+    background: var(--ink);
+    color: #fff;
+    font-family: var(--font);
+    font-size: 12px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 10;
+    white-space: nowrap;
+  }
+  .map-tooltip.show { opacity: 1; }
+
+  /* ── COLLECTOR APP ── */
+  .collector-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    height: calc(100vh - 56px);
+  }
+  .collector-phone {
+    background: var(--green-deep);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+  }
+  .phone-frame {
+    width: 280px;
+    background: #1a2e22;
+    border-radius: 36px;
+    padding: 16px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.4);
+    border: 2px solid rgba(255,255,255,0.1);
+  }
+  .phone-screen {
+    background: var(--surface);
+    border-radius: 24px;
+    overflow: hidden;
+    min-height: 540px;
+  }
+  .phone-status-bar {
+    background: var(--green-mid);
+    padding: 10px 16px 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .phone-status-bar .time { font-size: 12px; font-weight: 600; color: #fff; }
+  .phone-status-bar .icons { font-size: 11px; color: rgba(255,255,255,0.8); }
+  .phone-header {
+    background: var(--green-mid);
+    padding: 12px 16px 16px;
+  }
+  .phone-header h2 { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 2px; }
+  .phone-header p { font-size: 11px; color: rgba(255,255,255,0.6); }
+  .phone-content { padding: 12px; }
+
+  .task-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 8px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .task-card.done { opacity: 0.6; }
+  .task-card:hover { border-color: var(--green-bright); }
+  .task-card-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .task-village { font-size: 13px; font-weight: 600; flex: 1; }
+  .task-meta { font-size: 11px; color: var(--ink-light); display: flex; gap: 8px; }
+  .task-progress {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 8px;
+  }
+  .task-progress-fill {
+    height: 100%;
+    background: var(--green-bright);
+    border-radius: 2px;
+    transition: width 0.4s;
+  }
+
+  .scan-btn {
+    width: 100%;
+    background: var(--green-bright);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    padding: 14px;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: var(--font);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .scan-btn:hover { background: var(--green-mid); }
+
+  .collector-panel {
+    background: var(--surface);
+    padding: 28px;
+    overflow-y: auto;
+  }
+
+  /* ── STAKEHOLDER TABLE ── */
+  .data-page { padding: 28px; }
+  .data-page h2 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+  .data-page .sub { font-size: 13px; color: var(--ink-light); margin-bottom: 24px; }
+
+  .filter-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .filter-btn {
+    padding: 6px 14px;
+    border-radius: 99px;
+    border: 1px solid var(--border);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    background: var(--surface-card);
+    color: var(--ink-light);
+    transition: all 0.15s;
+  }
+  .filter-btn.active {
+    background: var(--green-deep);
+    color: #fff;
+    border-color: var(--green-deep);
+  }
+
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--surface-card);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .data-table th {
+    background: #f8faf9;
+    padding: 11px 16px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: var(--ink-light);
+    border-bottom: 1px solid var(--border);
+  }
+  .data-table td {
+    padding: 11px 16px;
+    border-bottom: 1px solid #f0f5f2;
+    color: var(--ink);
+  }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:hover td { background: var(--surface); }
+
+  .sparkline { display: inline-block; }
+
+  /* ── ROUTE RESULT ── */
+  .route-result {
+    background: var(--green-deep);
+    color: #fff;
+    border-radius: 10px;
+    padding: 14px;
+    margin: 12px 12px 0;
+    font-size: 12px;
+    display: none;
+  }
+  .route-result.show { display: block; }
+  .route-result h4 { font-size: 13px; font-weight: 600; margin-bottom: 8px; color: var(--green-light); }
+  .route-stat { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .route-stat:last-child { border: none; }
+  .route-stat span:last-child { font-family: var(--mono); color: var(--green-light); }
+
+  /* ── CHARTS PAGE ── */
+  .charts-page { padding: 28px; }
+  .charts-page h2 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 20px;
+  }
+  .chart-card {
+    background: var(--surface-card);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    padding: 20px;
+  }
+  .chart-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .chart-card .sub { font-size: 12px; color: var(--ink-light); margin-bottom: 16px; }
+
+  /* Road path animation */
+  .route-path {
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+    transition: stroke-dashoffset 1.5s ease;
+  }
+  .route-path.animated { stroke-dashoffset: 0; }
+
+  /* ── SCAN MODAL ── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 200;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: var(--surface-card);
+    border-radius: 16px;
+    padding: 28px;
+    width: 380px;
+    max-width: 90vw;
+  }
+  .modal h3 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  .modal .sub { font-size: 13px; color: var(--ink-light); margin-bottom: 20px; }
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--ink-light); margin-bottom: 6px; }
+  .form-input {
+    width: 100%;
+    padding: 9px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    font-size: 13px;
+    font-family: var(--font);
+    outline: none;
+    transition: border-color 0.15s;
+    background: var(--surface);
+  }
+  .form-input:focus { border-color: var(--green-bright); }
+  .form-select {
+    width: 100%;
+    padding: 9px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    font-size: 13px;
+    font-family: var(--font);
+    background: var(--surface);
+    cursor: pointer;
+  }
+  .modal-actions { display: flex; gap: 8px; margin-top: 20px; }
+
+  /* Animated number */
+  @keyframes countUp {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .count-anim { animation: countUp 0.4s ease; }
+
+  /* ── LANGUAGE SELECTOR OVERLAY ── */
+  #lang-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    background: linear-gradient(135deg, #0d3b2e 0%, #1a5c43 50%, #0d3b2e 100%);
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column;
+  }
+  .lang-logo { font-family: var(--font); font-size: 36px; font-weight: 800; color: #fff; letter-spacing: -1px; margin-bottom: 6px; }
+  .lang-logo span { color: var(--green-light); }
+  .lang-tagline { font-size: 13px; color: rgba(255,255,255,0.5); margin-bottom: 40px; letter-spacing: 0.5px; }
+  .lang-title { font-size: 15px; color: rgba(255,255,255,0.7); margin-bottom: 20px; font-weight: 500; }
+  .lang-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; max-width: 560px; width: 90vw; }
+  .lang-btn { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; padding: 16px 12px; cursor: pointer; transition: all 0.2s; text-align: center; font-family: var(--font); }
+  .lang-btn:hover { background: rgba(255,255,255,0.18); border-color: var(--green-light); transform: translateY(-2px); }
+  .lang-btn .lang-native { font-size: 18px; font-weight: 700; color: #fff; display: block; margin-bottom: 4px; }
+  .lang-btn .lang-english { font-size: 11px; color: rgba(255,255,255,0.5); display: block; }
+  .lang-btn .lang-flag { font-size: 22px; display: block; margin-bottom: 6px; }
+  .lang-toggle { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.85); border-radius: 6px; padding: 4px 10px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: var(--font); transition: all 0.15s; display: flex; align-items: center; gap: 5px; }
+  .lang-toggle:hover { background: rgba(255,255,255,0.2); }
+  #lang-picker { position: fixed; top: 60px; right: 16px; background: var(--surface-card); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); z-index: 500; padding: 8px; display: none; min-width: 180px; }
+  #lang-picker.show { display: block; }
+  .lang-pick-item { padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 10px; transition: background 0.1s; }
+  .lang-pick-item:hover { background: var(--surface); }
+  .lang-pick-item.active { background: var(--green-pale); color: var(--green-mid); font-weight: 600; }
+  .lang-pick-item .pn { color: var(--ink); font-weight: 600; }
+  .lang-pick-item .pe { color: var(--ink-light); font-size: 11px; }
+</style>
+</head>
+<body>
+
+<!-- LANGUAGE SELECTOR OVERLAY -->
+<div id="lang-overlay">
+  <div class="lang-logo">Plasti<span>Route</span></div>
+  <div class="lang-tagline">Rural Plastic Waste Management · ग्रामीण प्लास्टिक अपशिष्ट प्रबंधन</div>
+  <div class="lang-title">भाषा चुनें · Select Your Language</div>
+  <div class="lang-grid">
+    <button class="lang-btn" onclick="selectLang('hi')">
+      <span class="lang-flag">🇮🇳</span>
+      <span class="lang-native">हिंदी</span>
+      <span class="lang-english">Hindi</span>
+    </button>
+    <button class="lang-btn" onclick="selectLang('en')">
+      <span class="lang-flag">🇬🇧</span>
+      <span class="lang-native">English</span>
+      <span class="lang-english">English</span>
+    </button>
+    <button class="lang-btn" onclick="selectLang('cg')">
+      <span class="lang-flag">🌾</span>
+      <span class="lang-native">छत्तीसगढ़ी</span>
+      <span class="lang-english">Chhattisgarhi</span>
+    </button>
+    <button class="lang-btn" onclick="selectLang('mr')">
+      <span class="lang-flag">🇮🇳</span>
+      <span class="lang-native">मराठी</span>
+      <span class="lang-english">Marathi</span>
+    </button>
+    <button class="lang-btn" onclick="selectLang('gu')">
+      <span class="lang-flag">🇮🇳</span>
+      <span class="lang-native">ગુજરાતી</span>
+      <span class="lang-english">Gujarati</span>
+    </button>
+    <button class="lang-btn" onclick="selectLang('bn')">
+      <span class="lang-flag">🇮🇳</span>
+      <span class="lang-native">বাংলা</span>
+      <span class="lang-english">Bengali</span>
+    </button>
+  </div>
+</div>
+
+<!-- MINI LANG PICKER (in-app) -->
+<div id="lang-picker">
+  <div class="lang-pick-item" onclick="selectLang('hi')"><span class="pn">हिंदी</span><span class="pe">Hindi</span></div>
+  <div class="lang-pick-item" onclick="selectLang('en')"><span class="pn">English</span><span class="pe">English</span></div>
+  <div class="lang-pick-item" onclick="selectLang('cg')"><span class="pn">छत्तीसगढ़ी</span><span class="pe">Chhattisgarhi</span></div>
+  <div class="lang-pick-item" onclick="selectLang('mr')"><span class="pn">मराठी</span><span class="pe">Marathi</span></div>
+  <div class="lang-pick-item" onclick="selectLang('gu')"><span class="pn">ગુજરાતી</span><span class="pe">Gujarati</span></div>
+  <div class="lang-pick-item" onclick="selectLang('bn')"><span class="pn">বাংলা</span><span class="pe">Bengali</span></div>
+</div>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-logo">Plasti<span>Route</span></div>
+  <div class="nav-tabs">
+    <div class="nav-tab active" onclick="showPage('dashboard')" data-i18n="nav_dashboard">Dashboard</div>
+    <div class="nav-tab" onclick="showPage('map')" data-i18n="nav_map">Route Map <span class="nav-badge">LIVE</span></div>
+    <div class="nav-tab" onclick="showPage('collector')" data-i18n="nav_collector">Collector App</div>
+    <div class="nav-tab" onclick="showPage('data')" data-i18n="nav_stakeholders">Stakeholders</div>
+    <div class="nav-tab" onclick="showPage('analytics')" data-i18n="nav_analytics">Analytics</div>
+  </div>
+  <div class="nav-right">
+    <div class="status-dot"></div>
+    <span class="nav-user" data-i18n="nav_user">Dist. Coordinator · Raipur</span>
+    <button class="lang-toggle" onclick="toggleLangPicker()" id="lang-toggle-btn">🌐 <span id="lang-label">EN</span></button>
+  </div>
+</nav>
+
+<!-- ━━━ DASHBOARD PAGE ━━━ -->
+<div id="page-dashboard" class="page active">
+  <div class="dash-header">
+    <h1 data-i18n="dash_title">Raipur District Overview</h1>
+    <p data-i18n="dash_sub">Chhattisgarh · Week 23 · 12 Jun 2025 — Real-time waste collection intelligence</p>
+  </div>
+  <div class="dash-body">
+    <div class="metrics-grid">
+      <div class="metric-card" style="--accent:#2d8a5e">
+        <div class="metric-label" data-i18n="m_plastic">Plastic Collected</div>
+        <div class="metric-value" id="m-plastic">4,218</div>
+        <div class="metric-sub"><span class="metric-trend-up">↑ 12%</span> vs last week · kg</div>
+      </div>
+      <div class="metric-card" style="--accent:#f59e0b">
+        <div class="metric-label" data-i18n="m_villages">Villages Covered</div>
+        <div class="metric-value">15 / 20</div>
+        <div class="metric-sub"><span class="metric-trend-up">↑ 3</span> new this week</div>
+      </div>
+      <div class="metric-card" style="--accent:#3b82f6">
+        <div class="metric-label" data-i18n="m_efficiency">Route Efficiency</div>
+        <div class="metric-value">78%</div>
+        <div class="metric-sub"><span class="metric-trend-up">↑ 6pp</span> fuel saved: 38L</div>
+      </div>
+      <div class="metric-card" style="--accent:#e45c3a">
+        <div class="metric-label" data-i18n="m_savings">Cost Savings</div>
+        <div class="metric-value">₹11,240</div>
+        <div class="metric-sub"><span class="metric-trend-up">↑ 22%</span> vs manual routing</div>
+      </div>
+    </div>
+
+    <div class="dashboard-grid">
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h3 data-i18n="c_trend">Weekly Collection Trend</h3>
+            <div class="sub" data-i18n="sub_trend">Plastic collected by type (kg)</div>
+          </div>
+          <span class="badge badge-green">On track</span>
+        </div>
+        <div class="card-body">
+          <div style="position:relative;height:220px">
+            <canvas id="trendChart"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h3 data-i18n="c_bytype">Collection by Type</h3>
+            <div class="sub" data-i18n="sub_bytype">Current week breakdown</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div style="position:relative;height:180px">
+            <canvas id="typeChart"></canvas>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:12px;font-size:11px;color:var(--ink-light)">
+            <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#2d8a5e;display:inline-block"></span>PET Bottles 42%</span>
+            <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#f59e0b;display:inline-block"></span>HDPE 28%</span>
+            <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#3b82f6;display:inline-block"></span>Multilayer 18%</span>
+            <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#e45c3a;display:inline-block"></span>Other 12%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+      <div class="card">
+        <div class="card-head"><h3 data-i18n="c_topvillages">Top Villages</h3></div>
+        <div class="card-body" style="padding:0">
+          <table class="data-table" style="border:none;border-radius:0">
+            <thead><tr><th>Village</th><th>kg/wk</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>Raipur</td><td style="font-family:var(--mono)">342</td><td><span class="badge badge-green">Active</span></td></tr>
+              <tr><td>Abhanpur</td><td style="font-family:var(--mono)">298</td><td><span class="badge badge-green">Active</span></td></tr>
+              <tr><td>Arang</td><td style="font-family:var(--mono)">271</td><td><span class="badge badge-green">Active</span></td></tr>
+              <tr><td>Baloda Bazar</td><td style="font-family:var(--mono)">212</td><td><span class="badge badge-amber">Pending</span></td></tr>
+              <tr><td>Mandir Hasaud</td><td style="font-family:var(--mono)">198</td><td><span class="badge badge-green">Active</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3 data-i18n="c_collectors">Active Collectors</h3></div>
+        <div class="card-body" style="padding:12px">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:32px;height:32px;border-radius:50%;background:var(--green-pale);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--green-mid)">RK</div>
+              <div style="flex:1"><div style="font-size:13px;font-weight:500">Ram Kumar</div><div style="font-size:11px;color:var(--ink-light)">Route A · Raipur cluster</div></div>
+              <span class="badge badge-green">On route</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:32px;height:32px;border-radius:50%;background:var(--amber-pale);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#b45309">SP</div>
+              <div style="flex:1"><div style="font-size:13px;font-weight:500">Sunita Patel</div><div style="font-size:11px;color:var(--ink-light)">Route B · Arang cluster</div></div>
+              <span class="badge badge-amber">Delayed</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:32px;height:32px;border-radius:50%;background:var(--blue-pale);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#1d4ed8">MV</div>
+              <div style="flex:1"><div style="font-size:13px;font-weight:500">Mohan Verma</div><div style="font-size:11px;color:var(--ink-light)">Route C · Bhatapara cluster</div></div>
+              <span class="badge badge-blue">Aggregating</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3 data-i18n="c_economy">Economy Model</h3></div>
+        <div class="card-body">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="background:var(--green-pale);border-radius:8px;padding:10px 12px">
+              <div style="font-size:11px;color:var(--green-mid);font-weight:600;margin-bottom:2px" data-i18n="eco_shg">SHG Earnings</div>
+              <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--green-deep)">₹38,400</div>
+              <div style="font-size:11px;color:var(--ink-light)" data-i18n-ctx="shg_count">12 SHGs · this month</div>
+            </div>
+            <div style="background:var(--amber-pale);border-radius:8px;padding:10px 12px">
+              <div style="font-size:11px;color:#b45309;font-weight:600;margin-bottom:2px" data-i18n="eco_recycler">Recycler Revenue</div>
+              <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:#92400e">₹1.2L</div>
+              <div style="font-size:11px;color:var(--ink-light)">3 partner recyclers</div>
+            </div>
+            <div style="background:var(--blue-pale);border-radius:8px;padding:10px 12px">
+              <div style="font-size:11px;color:#1d4ed8;font-weight:600;margin-bottom:2px" data-i18n="eco_jobs">Youth Jobs Created</div>
+              <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:#1e3a8a">47</div>
+              <div style="font-size:11px;color:var(--ink-light)">collectors + sorters</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ━━━ MAP PAGE ━━━ -->
+<div id="page-map" class="page">
+  <div class="map-container">
+    <div class="map-sidebar">
+      <div class="map-sidebar-head">
+        <h2 data-i18n="ro_title">Route Optimizer</h2>
+        <div class="route-controls">
+          <div class="control-row">
+            <label data-i18n="ro_capacity">Vehicle Capacity</label>
+            <span class="control-val" id="cap-val">800 kg</span>
+          </div>
+          <input type="range" min="400" max="1500" value="800" step="50" oninput="updateCap(this.value)">
+
+          <div class="control-row" style="margin-top:6px">
+            <label data-i18n="ro_fuel">Fuel Budget</label>
+            <span class="control-val" id="fuel-val">₹1200</span>
+          </div>
+          <input type="range" min="500" max="2500" value="1200" step="100" oninput="updateFuel(this.value)">
+
+          <div class="control-row" style="margin-top:6px">
+            <label data-i18n="ro_stops">Max Stops / Route</label>
+            <span class="control-val" id="stops-val">7</span>
+          </div>
+          <input type="range" min="3" max="12" value="7" step="1" oninput="updateStops(this.value)">
+
+          <button class="btn btn-primary" style="margin-top:10px;width:100%" onclick="runOptimizer()">
+            <span data-i18n="ro_btn">⚡ Run AI Optimizer</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="route-result" id="route-result">
+        <h4 data-i18n="rr_title">Optimized Route · Route A</h4>
+        <div class="route-stat"><span data-i18n="rr_dist">Total distance</span><span id="r-dist">—</span></div>
+        <div class="route-stat"><span data-i18n="rr_fuel">Fuel estimate</span><span id="r-fuel">—</span></div>
+        <div class="route-stat"><span data-i18n="rr_waste">Waste collected</span><span id="r-waste">—</span></div>
+        <div class="route-stat"><span>Stops</span><span id="r-stops">—</span></div>
+        <div class="route-stat"><span data-i18n="rr_save">Savings vs prev.</span><span id="r-save">—</span></div>
+        <div class="route-stat"><span data-i18n="rr_co2">CO₂ avoided</span><span id="r-co2">—</span></div>
+      </div>
+
+      <div class="village-list" id="village-list"></div>
+    </div>
+
+    <div class="map-view" style="position:relative;overflow:hidden;background:#e8f0eb;display:flex;flex-direction:column;">
+
+      <!-- ── TOP: 2D GIS MAP ── -->
+      <div style="position:relative;flex:1;min-height:0;background:#dde8dc;">
+        <svg id="map-svg" viewBox="0 0 900 480" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;"></svg>
+        <div class="map-tooltip" id="map-tooltip"></div>
+
+        <!-- Map toggle buttons -->
+        <div style="position:absolute;top:12px;right:12px;display:flex;gap:6px;z-index:5;">
+          <button onclick="toggleMapView('2d')" id="btn-2d" style="background:#0d3b2e;color:#5bc49a;border:none;padding:5px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif;">2D MAP</button>
+          <button onclick="toggleMapView('3d')" id="btn-3d" style="background:rgba(255,255,255,0.9);color:#0d3b2e;border:none;padding:5px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif;">3D NAV</button>
+        </div>
+      </div>
+
+      <!-- ── BOTTOM: 3D NAV STRIP ── -->
+      <div id="three-panel" style="position:relative;height:260px;background:#111;flex-shrink:0;border-top:2px solid #2d8a5e;">
+        <div id="three-canvas-container" style="position:absolute;inset:0;"></div>
+
+        <!-- Start overlay for 3D view -->
+        <div id="nav-start-overlay" style="position:absolute;inset:0;background:rgba(13,59,46,0.88);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:50;color:#fff;">
+          <div style="font-size:16px;font-weight:700;margin-bottom:4px;letter-spacing:-0.5px;">🚛 3D Live Navigation</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.55);margin-bottom:12px;">Vehicle drives the optimized route</div>
+          <button id="nav-start-btn" style="background:#2d8a5e;color:#fff;border:none;padding:8px 20px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif;"><span data-i18n="nav3d_btn">▶ Start Navigation</span></button>
+        </div>
+
+        <!-- Floating labels -->
+        <div id="label-village" style="position:absolute;background:#1a73e8;color:#fff;padding:4px 10px;border-radius:16px;font-size:11px;font-weight:500;white-space:nowrap;box-shadow:0 3px 6px rgba(0,0,0,0.3);border:2px solid #fff;opacity:0;transition:opacity 0.3s;pointer-events:none;font-family:'Space Grotesk',sans-serif;">⬆ Raipur Village</div>
+        <div id="label-agg" style="position:absolute;background:#0d3b2e;color:#5bc49a;padding:4px 10px;border-radius:16px;font-size:11px;font-weight:500;white-space:nowrap;box-shadow:0 3px 6px rgba(0,0,0,0.3);border:2px solid #2d8a5e;opacity:0;transition:opacity 0.3s;pointer-events:none;font-family:'Space Grotesk',sans-serif;">▲ Raipur Depot</div>
+
+        <!-- ETA panel -->
+        <div id="nav-eta" style="position:absolute;bottom:10px;left:12px;background:#fff;border-radius:10px;padding:8px 14px;box-shadow:0 4px 14px rgba(0,0,0,0.2);min-width:160px;display:none;font-family:'Space Grotesk',sans-serif;">
+          <div style="font-size:15px;font-weight:700;color:#0f1c14;margin-bottom:4px;">ETA 10:45 AM</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#5a6e63;">
+            <span>🚛 Ram Kumar</span>
+            <span id="nav-dist" style="font-size:13px;color:#0f1c14;font-weight:700;">58 km</span>
+          </div>
+          <div style="margin-top:6px;height:3px;background:#e8f0eb;border-radius:2px;overflow:hidden;">
+            <div id="nav-progress-bar" style="height:100%;background:#2d8a5e;width:0%;transition:width 0.3s;"></div>
+          </div>
+        </div>
+
+        <!-- PlastiRoute badge -->
+        <div style="position:absolute;bottom:10px;right:12px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:13px;color:#fff;text-shadow:1px 1px 3px rgba(0,0,0,0.6);pointer-events:none;">
+          <span style="color:#5bc49a">Plasti</span>Route <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.5)">3D</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- THREE.JS 3D NAVIGATION MODULE -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+
+const synth = window.speechSynthesis;
+let hasSpokenStart = false, hasSpokenMid = false, hasSpokenAgg = false;
+
+function speak(text) {
+  if (synth.speaking) synth.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = 0.9; u.pitch = 1.0;
+  synth.speak(u);
+}
+
+let isNavigating = false;
+let navProgress = 0;
+let threeInited = false;
+
+// expose start trigger for the optimizer button
+window._startThreeNav = function() {
+  if (!threeInited) initThree();
+  document.getElementById('nav-start-overlay').style.display = 'none';
+  document.getElementById('nav-eta').style.display = 'block';
+  isNavigating = true;
+  navProgress = 0;
+  hasSpokenStart = false; hasSpokenMid = false; hasSpokenAgg = false;
+};
+
+document.getElementById('nav-start-btn').addEventListener('click', () => {
+  if (!threeInited) initThree();
+  document.getElementById('nav-start-overlay').style.display = 'none';
+  document.getElementById('nav-eta').style.display = 'block';
+  isNavigating = true;
+});
+
+function initThree() {
+  threeInited = true;
+  const container = document.getElementById('three-canvas-container');
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xa0c4ff);
+  scene.fog = new THREE.FogExp2(0xa0c4ff, 0.0025);
+
+  const W = container.clientWidth, H = container.clientHeight;
+  const camera = new THREE.PerspectiveCamera(60, W / H, 1, 1200);
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(W, H);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  container.appendChild(renderer.domElement);
+
+  // Lights
+  scene.add(new THREE.AmbientLight(0xffffff, 0.65));
+  const sun = new THREE.DirectionalLight(0xffffff, 0.85);
+  sun.position.set(120, 200, 80);
+  sun.castShadow = true;
+  sun.shadow.camera.top = sun.shadow.camera.right = 200;
+  sun.shadow.camera.bottom = sun.shadow.camera.left = -200;
+  sun.shadow.mapSize.width = sun.shadow.mapSize.height = 2048;
+  scene.add(sun);
+
+  // Ground
+  const ground = new THREE.Mesh(
+    new THREE.PlaneGeometry(1200, 1200),
+    new THREE.MeshLambertMaterial({ color: 0x7ab86a })
+  );
+  ground.rotation.x = -Math.PI / 2;
+  ground.receiveShadow = true;
+  scene.add(ground);
+
+  // Roads
+  const roadMat = new THREE.MeshLambertMaterial({ color: 0x555555 });
+  const mainRoad = new THREE.Mesh(new THREE.PlaneGeometry(14, 1200), roadMat);
+  mainRoad.rotation.x = -Math.PI / 2; mainRoad.position.y = 0.1;
+  mainRoad.receiveShadow = true; scene.add(mainRoad);
+
+  // Road markings (dashed center line)
+  const markMat = new THREE.MeshBasicMaterial({ color: 0xffffff, opacity: 0.7, transparent: true });
+  for (let z = -500; z < 500; z += 20) {
+    const mark = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 8), markMat);
+    mark.rotation.x = -Math.PI / 2; mark.position.set(0, 0.15, z);
+    scene.add(mark);
+  }
+
+  // Overpass (aggregation depot structure)
+  const overpass = new THREE.Mesh(new THREE.BoxGeometry(900, 2.5, 22), roadMat);
+  overpass.position.set(0, 10, -200);
+  overpass.castShadow = true; scene.add(overpass);
+
+  const pillarMat = new THREE.MeshLambertMaterial({ color: 0xaaaaaa });
+  [-25, 25].forEach(x => {
+    const p = new THREE.Mesh(new THREE.CylinderGeometry(1.8, 1.8, 10), pillarMat);
+    p.position.set(x, 5, -200); p.castShadow = true; scene.add(p);
+  });
+
+  // Aggregation depot building
+  const depotGroup = new THREE.Group();
+  const depotBody = new THREE.Mesh(new THREE.BoxGeometry(30, 14, 20), new THREE.MeshLambertMaterial({ color: 0x1a5c43 }));
+  depotBody.position.set(-60, 7, -200); depotBody.castShadow = true; depotGroup.add(depotBody);
+  const depotRoof = new THREE.Mesh(new THREE.BoxGeometry(32, 2, 22), new THREE.MeshLambertMaterial({ color: 0x0d3b2e }));
+  depotRoof.position.set(-60, 15, -200); depotGroup.add(depotRoof);
+  // Sign
+  const signCanvas = document.createElement('canvas');
+  signCanvas.width = 512; signCanvas.height = 128;
+  const sCtx = signCanvas.getContext('2d');
+  sCtx.fillStyle = '#0d3b2e'; sCtx.fillRect(0,0,512,128);
+  sCtx.fillStyle = '#5bc49a'; sCtx.font = 'bold 48px Arial';
+  sCtx.textAlign = 'center'; sCtx.textBaseline = 'middle';
+  sCtx.fillText('RAIPUR DEPOT', 256, 64);
+  const signMesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(20, 5),
+    new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(signCanvas) })
+  );
+  signMesh.position.set(-60, 16, -188); depotGroup.add(signMesh);
+  scene.add(depotGroup);
+
+  // Village buildings (procedural)
+  const bldgMat = new THREE.MeshLambertMaterial({ color: 0xe0d5c8 });
+  const roofColors = [0xe07050, 0xd4a857, 0xb07040, 0xc06030];
+  for (let i = 0; i < 180; i++) {
+    const x = (Math.random() - 0.5) * 600;
+    const z = (Math.random() - 0.5) * 1000;
+    if (Math.abs(x) < 22) continue;
+    const isTree = Math.random() > 0.55;
+    if (isTree) {
+      const tg = new THREE.Group();
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.5, 3), new THREE.MeshLambertMaterial({ color: 0x5c4033 }));
+      trunk.position.y = 1.5; trunk.castShadow = true;
+      const leaves = new THREE.Mesh(new THREE.SphereGeometry(2.2 + Math.random(), 7, 7), new THREE.MeshLambertMaterial({ color: i % 3 === 0 ? 0x2d5a27 : 0x3a7a30 }));
+      leaves.position.y = 3.8; leaves.castShadow = true;
+      tg.add(trunk, leaves); tg.position.set(x, 0, z); scene.add(tg);
+    } else {
+      const w = Math.random() * 8 + 7, d = Math.random() * 8 + 7, h = Math.random() * 12 + 4;
+      const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), bldgMat);
+      b.position.set(x, h / 2, z); b.castShadow = true; b.receiveShadow = true;
+      const roof = new THREE.Mesh(new THREE.BoxGeometry(w + 0.5, 1, d + 0.5), new THREE.MeshLambertMaterial({ color: roofColors[i % roofColors.length] }));
+      roof.position.set(x, h + 0.5, z); scene.add(b); scene.add(roof);
+    }
+  }
+
+  // Route path — follows optimized village collection route
+  const pathCurve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0, 0.3, 350),
+    new THREE.Vector3(0, 0.3, 150),
+    new THREE.Vector3(2, 0.3, 0),
+    new THREE.Vector3(0, 0.3, -100),
+    new THREE.Vector3(-3, 0.3, -170),
+    new THREE.Vector3(-8, 0.3, -220),
+    new THREE.Vector3(-12, 0.3, -300),
+    new THREE.Vector3(-10, 0.3, -400),
+  ]);
+
+  // Blue route tube
+  const routeMesh = new THREE.Mesh(
+    new THREE.TubeGeometry(pathCurve, 200, 1.0, 8, false),
+    new THREE.MeshBasicMaterial({ color: 0x1a73e8, transparent: true, opacity: 0.85 })
+  );
+  routeMesh.position.y = 0.15; scene.add(routeMesh);
+
+  // Chevrons along route
+  const chvCanvas = document.createElement('canvas');
+  chvCanvas.width = 128; chvCanvas.height = 128;
+  const cCtx = chvCanvas.getContext('2d');
+  cCtx.fillStyle = 'rgba(255,255,255,0.9)';
+  cCtx.beginPath(); cCtx.moveTo(64,18); cCtx.lineTo(110,110); cCtx.lineTo(64,86); cCtx.lineTo(18,110); cCtx.fill();
+  const chvMat = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(chvCanvas), transparent: true, depthWrite: false });
+  for (let t = 0.05; t < 0.95; t += 0.04) {
+    const pt = pathCurve.getPointAt(t);
+    const tg = pathCurve.getTangentAt(t);
+    const arrow = new THREE.Mesh(new THREE.PlaneGeometry(4, 4), chvMat);
+    arrow.position.copy(pt); arrow.position.y += 0.4;
+    arrow.rotation.x = -Math.PI / 2;
+    arrow.lookAt(pt.clone().add(tg));
+    scene.add(arrow);
+  }
+
+  // Village marker pins along route
+  const pinMat = new THREE.MeshLambertMaterial({ color: 0xea4335 });
+  const villagePins = [0.1, 0.25, 0.45, 0.6, 0.75];
+  villagePins.forEach(t => {
+    const pt = pathCurve.getPointAt(t);
+    const pg = new THREE.Group();
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(1.2, 4, 12), pinMat);
+    cone.rotation.x = Math.PI; cone.position.y = 2;
+    const sph = new THREE.Mesh(new THREE.SphereGeometry(1.2, 12, 12), pinMat);
+    sph.position.y = 4;
+    pg.add(cone, sph);
+    pg.position.set(pt.x + 5, pt.y + 1, pt.z);
+    scene.add(pg);
+  });
+
+  // Destination pin (recycler/depot)
+  const finalPt = pathCurve.getPointAt(0.99);
+  const destGrp = new THREE.Group();
+  const dCone = new THREE.Mesh(new THREE.ConeGeometry(2, 6, 14), new THREE.MeshLambertMaterial({ color: 0x2d8a5e }));
+  dCone.rotation.x = Math.PI; dCone.position.y = 3;
+  const dSph = new THREE.Mesh(new THREE.SphereGeometry(2, 14, 14), new THREE.MeshLambertMaterial({ color: 0x2d8a5e }));
+  dSph.position.y = 6.5;
+  destGrp.add(dCone, dSph);
+  destGrp.position.set(finalPt.x, finalPt.y + 2, finalPt.z);
+  scene.add(destGrp);
+
+  // Collection Truck (PlastiRoute branded)
+  const truck = new THREE.Group();
+
+  // Trailer body
+  const trailerCanvas = document.createElement('canvas');
+  trailerCanvas.width = 256; trailerCanvas.height = 256;
+  const tCtx = trailerCanvas.getContext('2d');
+  tCtx.fillStyle = '#2d8a5e'; tCtx.fillRect(0,0,256,256);
+  tCtx.fillStyle = '#fff'; tCtx.font = 'bold 60px Arial';
+  tCtx.textAlign = 'center'; tCtx.textBaseline = 'middle';
+  tCtx.fillText('♻', 128, 128);
+  const trailerTex = new THREE.CanvasTexture(trailerCanvas);
+  const trailerMats = [
+    new THREE.MeshLambertMaterial({ map: trailerTex }),
+    new THREE.MeshLambertMaterial({ map: trailerTex }),
+    new THREE.MeshLambertMaterial({ color: 0x1a5c43 }),
+    new THREE.MeshLambertMaterial({ color: 0x1a5c43 }),
+    new THREE.MeshLambertMaterial({ color: 0x1a5c43 }),
+    new THREE.MeshLambertMaterial({ color: 0x0d3b2e }),
+  ];
+  const trailer = new THREE.Mesh(new THREE.BoxGeometry(3.5, 4, 10), trailerMats);
+  trailer.position.set(0, 3, -1); trailer.castShadow = true; truck.add(trailer);
+
+  const cab = new THREE.Mesh(new THREE.BoxGeometry(3.5, 3.5, 3), new THREE.MeshLambertMaterial({ color: 0xffffff }));
+  cab.position.set(0, 2.5, 6); cab.castShadow = true; truck.add(cab);
+
+  const windshield = new THREE.Mesh(new THREE.PlaneGeometry(3, 1.4), new THREE.MeshBasicMaterial({ color: 0x111111 }));
+  windshield.position.set(0, 3, 7.52); truck.add(windshield);
+
+  const wheelMat = new THREE.MeshLambertMaterial({ color: 0x222222 });
+  [-4, -0.5, 5.5].forEach(z => {
+    const whl = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.85, 4.2, 14), wheelMat);
+    whl.rotation.z = Math.PI / 2; whl.position.set(0, 0.85, z); truck.add(whl);
+  });
+
+  scene.add(truck);
+
+  // Label anchor world positions
+  const labelVillagePos = pathCurve.getPointAt(0.2); labelVillagePos.y = 10;
+  const labelAggPos = pathCurve.getPointAt(0.58); labelAggPos.y = 18;
+
+  const labelVillageEl = document.getElementById('label-village');
+  const labelAggEl = document.getElementById('label-agg');
+  const distEl = document.getElementById('nav-dist');
+  const progressBar = document.getElementById('nav-progress-bar');
+
+  function projectLabel(pos3D, el, show) {
+    if (!show) { el.style.opacity = '0'; return; }
+    const v = pos3D.clone();
+    v.project(camera);
+    if (v.z >= 1) { el.style.opacity = '0'; return; }
+    const x = (v.x * 0.5 + 0.5) * container.clientWidth;
+    const y = (v.y * -0.5 + 0.5) * container.clientHeight;
+    el.style.opacity = '1';
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+  }
+
+  const startPt = pathCurve.getPointAt(0);
+  truck.position.copy(startPt);
+  truck.lookAt(pathCurve.getPointAt(0.01));
+  camera.position.set(startPt.x, startPt.y + 28, startPt.z - 50);
+  camera.lookAt(startPt);
+
+  const SPEED = 0.00035;
+
+  function animate() {
+    requestAnimationFrame(animate);
+
+    if (isNavigating && navProgress < 1) {
+      navProgress = Math.min(navProgress + SPEED, 1);
+
+      const cur = pathCurve.getPointAt(navProgress);
+      const ahead = pathCurve.getPointAt(Math.min(navProgress + 0.01, 1));
+      truck.position.copy(cur);
+      truck.lookAt(ahead);
+
+      // Voice navigation
+      if (navProgress > 0.06 && !hasSpokenStart) {
+        speak((window._getLang&&window._getLang()==='hi')?'अनुकूलित संग्रह रूट शुरू। रायपुर की ओर सीधे चलें।':(window._getLang&&window._getLang()==='cg')?'रायपुर के तरफ सीधा चलव।':'Starting optimized collection route. Continue straight through Raipur.');
+        hasSpokenStart = true;
+      }
+      if (navProgress > 0.38 && !hasSpokenMid) {
+        speak((window._getLang&&window._getLang()==='hi')?'500 मीटर में रायपुर डिपो पहुंचें। उतराई के लिए तैयार रहें।':(window._getLang&&window._getLang()==='cg')?'500 मीटर में रायपुर डिपो। उतराई बर तइयार रहव।':'In 500 meters, approach Raipur Aggregation Depot. Prepare to offload.');
+        hasSpokenMid = true;
+      }
+      if (navProgress > 0.62 && !hasSpokenAgg) {
+        speak((window._getLang&&window._getLang()==='hi')?'आप संग्रहण बिंदु पर पहुंच गए। कुल प्लास्टिक: 847 किलोग्राम।':(window._getLang&&window._getLang()==='cg')?'डिपो पहुंच गेव। कुल प्लास्टिक: 847 किलोग्राम।':'You have reached the aggregation point. Total plastic collected: 847 kilograms.');
+        hasSpokenAgg = true;
+      }
+
+      // Camera follow
+      const camOff = new THREE.Vector3(0, 28, -50).applyMatrix4(truck.matrixWorld);
+      camera.position.lerp(camOff, 0.08);
+      const lookTarget = cur.clone().add(new THREE.Vector3(0, 0, 20).applyQuaternion(truck.quaternion));
+      camera.lookAt(lookTarget);
+
+      // Distance readout
+      const kmLeft = Math.max(0, (58 * (1 - navProgress)));
+      distEl.textContent = kmLeft.toFixed(1) + ' km';
+      progressBar.style.width = (navProgress * 100).toFixed(1) + '%';
+
+      // Floating labels
+      projectLabel(labelVillagePos, labelVillageEl, navProgress > 0.08 && navProgress < 0.32);
+      projectLabel(labelAggPos, labelAggEl, navProgress > 0.45 && navProgress < 0.72);
+
+      // Restart loop
+      if (navProgress >= 1) {
+        setTimeout(() => { navProgress = 0; hasSpokenStart = false; hasSpokenMid = false; hasSpokenAgg = false; }, 3000);
+      }
+    }
+
+    renderer.render(scene, camera);
+  }
+
+  animate();
+
+  window.addEventListener('resize', () => {
+    const w = container.clientWidth, h = container.clientHeight;
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+  });
+}
+</script>
+
+<!-- ━━━ COLLECTOR APP ━━━ -->
+<div id="page-collector" class="page">
+  <div class="collector-layout">
+    <div class="collector-phone">
+      <div class="phone-frame">
+        <div class="phone-screen">
+          <div class="phone-status-bar">
+            <span class="time">09:42</span>
+            <span class="icons">▲ 4G ⬡</span>
+          </div>
+          <div class="phone-header">
+            <h2 data-i18n="col_myroute">My Route Today</h2>
+            <p>Ram Kumar · Route A · 6 stops</p>
+          </div>
+          <div class="phone-content">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+              <span style="font-size:11px;color:var(--ink-light);font-weight:600">PROGRESS</span>
+              <span style="font-size:11px;font-family:var(--mono);color:var(--green-bright)" id="phone-progress">4 / 6 done</span>
+            </div>
+            <div class="task-progress" style="margin-bottom:12px">
+              <div class="task-progress-fill" id="phone-bar" style="width:67%"></div>
+            </div>
+            <div id="phone-tasks"></div>
+            <button class="scan-btn" onclick="openScan()">
+              📷 Log Collection
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="collector-panel">
+      <h2 style="font-size:20px;font-weight:700;margin-bottom:4px" data-i18n="col_title">Collector Interface</h2>
+      <p style="font-size:13px;color:var(--ink-light);margin-bottom:24px">Mobile-first app for field waste collectors and SHG members</p>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
+        <div class="metric-card" style="--accent:var(--green-bright)">
+          <div class="metric-label" data-i18n="col_today">Collected Today</div>
+          <div class="metric-value" id="col-today">847</div>
+          <div class="metric-sub">kg · 4 villages done</div>
+        </div>
+        <div class="metric-card" style="--accent:var(--amber)">
+          <div class="metric-label" data-i18n="col_earn">Earnings Today</div>
+          <div class="metric-value">₹<span id="col-earn">423</span></div>
+          <div class="metric-sub">₹0.50 per kg collected</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-head"><h3>Today's Stops</h3><span class="badge badge-blue">Route A</span></div>
+        <div class="card-body" style="padding:0">
+          <table class="data-table" style="border:none;border-radius:0">
+            <thead><tr><th>Village</th><th>Est. Waste</th><th>Collected</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody id="stops-table"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3><span data-i18n="seg_title">Waste Type Segregation Guide</span></h3></div>
+        <div class="card-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div style="background:#d1fae5;border-radius:8px;padding:12px">
+              <div style="font-size:11px;font-weight:600;color:#065f46;margin-bottom:4px" data-i18n-ctx="seg1">♻ PET / HDPE</div>
+              <div style="font-size:12px;color:#064e3b">Bottles, containers — HIGH value. Keep dry.</div>
+            </div>
+            <div style="background:#fef3c7;border-radius:8px;padding:12px">
+              <div style="font-size:11px;font-weight:600;color:#92400e;margin-bottom:4px">📦 Rigid Plastic</div>
+              <div style="font-size:12px;color:#78350f">Buckets, crates — MED value. Crush to compress.</div>
+            </div>
+            <div style="background:#dbeafe;border-radius:8px;padding:12px">
+              <div style="font-size:11px;font-weight:600;color:#1e40af;margin-bottom:4px">🛍 Multilayer</div>
+              <div style="font-size:12px;color:#1e3a8a">Sachets, pouches — Accept, keep separate bag.</div>
+            </div>
+            <div style="background:#fee2e2;border-radius:8px;padding:12px">
+              <div style="font-size:11px;font-weight:600;color:#991b1b;margin-bottom:4px">⚠ Contaminated</div>
+              <div style="font-size:12px;color:#7f1d1d">Food soiled — Reject or note for sorting centre.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ━━━ STAKEHOLDERS ━━━ -->
+<div id="page-data" class="page">
+  <div class="data-page">
+    <h2 data-i18n="st_title">Stakeholder Network</h2>
+    <p class="sub">All collectors, SHGs, aggregation points and recyclers in Raipur district</p>
+
+    <div class="filter-row">
+      <button class="filter-btn active" onclick="filterStake('all',this)">All</button>
+      <button class="filter-btn" onclick="filterStake('collector',this)">Collectors</button>
+      <button class="filter-btn" onclick="filterStake('shg',this)">SHGs</button>
+      <button class="filter-btn" onclick="filterStake('aggregator',this)">Aggregation Points</button>
+      <button class="filter-btn" onclick="filterStake('recycler',this)">Recyclers</button>
+    </div>
+
+    <table class="data-table" id="stake-table">
+      <thead>
+        <tr>
+          <th>Name</th><th>Type</th><th>Location</th><th>Villages Covered</th><th>Weekly Kg</th><th>Status</th><th>Contact</th>
+        </tr>
+      </thead>
+      <tbody id="stake-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ━━━ ANALYTICS ━━━ -->
+<div id="page-analytics" class="page">
+  <div class="charts-page">
+    <h2 data-i18n="an_title">Analytics & Insights</h2>
+    <p style="font-size:13px;color:var(--ink-light);margin-bottom:8px">Data-driven planning for local governments and NGOs</p>
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+      <div class="metric-card" style="--accent:#2d8a5e">
+        <div class="metric-label" data-i18n="an_monthly">Monthly Collection</div>
+        <div class="metric-value">16.8T</div>
+        <div class="metric-sub"><span class="metric-trend-up">↑ 31%</span> YoY</div>
+      </div>
+      <div class="metric-card" style="--accent:#f59e0b">
+        <div class="metric-label" data-i18n="an_routesave">Avg Route Saving</div>
+        <div class="metric-value">23%</div>
+        <div class="metric-sub">vs unoptimized baseline</div>
+      </div>
+      <div class="metric-card" style="--accent:#3b82f6">
+        <div class="metric-label" data-i18n="an_co2">CO₂ Avoided</div>
+        <div class="metric-value">4.2T</div>
+        <div class="metric-sub">equivalent this month</div>
+      </div>
+      <div class="metric-card" style="--accent:#e45c3a">
+        <div class="metric-label" data-i18n="an_recycle">Recycling Rate</div>
+        <div class="metric-value">68%</div>
+        <div class="metric-sub">of collected plastic</div>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-card">
+        <h3>Monthly Collection Volume</h3>
+        <div class="sub">Kg collected per month (2024-25)</div>
+        <div style="position:relative;height:200px"><canvas id="monthChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Route Efficiency Over Time</h3>
+        <div class="sub">% efficiency improvement since AI routing</div>
+        <div style="position:relative;height:200px"><canvas id="effChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Village-wise Collection</h3>
+        <div class="sub">Top 10 villages by weekly kg</div>
+        <div style="position:relative;height:220px"><canvas id="villageChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Circular Economy Flow</h3>
+        <div class="sub">Revenue distribution across stakeholders</div>
+        <div style="position:relative;height:200px"><canvas id="econChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- SCAN MODAL -->
+<div class="modal-overlay" id="scan-modal">
+  <div class="modal">
+    <h3 data-i18n="scan_title">Log Collection</h3>
+    <p class="sub"><span data-i18n="scan_sub">Enter waste collected at this stop</span></p>
+    <div class="form-group">
+      <label data-i18n="scan_village">Village</label>
+      <select class="form-select" id="scan-village">
+        <option>Raipur</option><option>Abhanpur</option><option>Arang</option>
+        <option>Dharsiwa</option><option>Mandir Hasaud</option><option>Rajim</option>
+        <option>Bhatapara</option><option>Dhamtari</option><option>Kurud</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label data-i18n="scan_weight">Weight Collected (kg)</label>
+      <input class="form-input" type="number" id="scan-kg" value="120" min="0" max="500">
+    </div>
+    <div class="form-group">
+      <label data-i18n="scan_type">Plastic Type</label>
+      <select class="form-select" id="scan-type">
+        <option>PET Bottles</option><option>HDPE</option><option>Multilayer</option><option>Rigid Plastic</option><option>Mixed</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label data-i18n="scan_condition">Condition</label>
+      <select class="form-select">
+        <option>Clean / Dry</option><option>Lightly soiled</option><option>Requires sorting</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" style="flex:1" onclick="submitScan()"><span data-i18n="scan_submit">✓ Submit Log</span></button>
+      <button class="btn btn-outline" onclick="closeScan()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──
+const villages = [
+  { id:'V01', name:'Raipur',         x:430, y:160, kg:342, type:'village', route:'A', color:'#2d8a5e' },
+  { id:'V02', name:'Abhanpur',       x:280, y:200, kg:298, type:'village', route:'A', color:'#2d8a5e' },
+  { id:'V03', name:'Arang',          x:580, y:200, kg:271, type:'village', route:'B', color:'#3b82f6' },
+  { id:'V04', name:'Tilda',          x:680, y:260, kg:189, type:'village', route:'B', color:'#3b82f6' },
+  { id:'V05', name:'Dharsiwa',       x:350, y:250, kg:231, type:'village', route:'A', color:'#2d8a5e' },
+  { id:'V06', name:'Mandir Hasaud',  x:490, y:280, kg:198, type:'village', route:'A', color:'#2d8a5e' },
+  { id:'V07', name:'Bhatapara',      x:200, y:310, kg:156, type:'village', route:'C', color:'#e45c3a' },
+  { id:'V08', name:'Baloda Bazar',   x:660, y:340, kg:212, type:'village', route:'B', color:'#3b82f6' },
+  { id:'V09', name:'Simga',          x:120, y:390, kg:143, type:'village', route:'C', color:'#e45c3a' },
+  { id:'V10', name:'Rajim',          x:440, y:420, kg:174, type:'village', route:'A', color:'#2d8a5e' },
+  { id:'V11', name:'Magarlod',       x:300, y:470, kg:121, type:'village', route:'C', color:'#e45c3a' },
+  { id:'V12', name:'Kurud',          x:560, y:450, kg:145, type:'village', route:'B', color:'#3b82f6' },
+  { id:'V13', name:'Dhamtari',       x:430, y:530, kg:98,  type:'village', route:'A', color:'#2d8a5e' },
+  { id:'V14', name:'Kharora',        x:750, y:320, kg:167, type:'village', route:'B', color:'#3b82f6' },
+  { id:'V15', name:'Palari',         x:180, y:460, kg:92,  type:'village', route:'C', color:'#e45c3a' },
+];
+
+const aggregationPoints = [
+  { id:'A01', name:'Raipur Depot',       x:430, y:310, type:'aggregation' },
+  { id:'A02', name:'Bhatapara Centre',   x:220, y:390, type:'aggregation' },
+  { id:'A03', name:'Baloda Aggreg.',     x:660, y:420, type:'aggregation' },
+];
+
+const recyclers = [
+  { id:'R01', name:'EcoRev Recyclers', x:430, y:590, type:'recycler' },
+];
+
+const stakeholders = [
+  { name:'Ram Kumar',          type:'collector',   loc:'Raipur',        villages:'6', wkg:'1240', status:'Active',   contact:'9876543210' },
+  { name:'Sunita Patel',       type:'collector',   loc:'Arang',         villages:'5', wkg:'987',  status:'Active',   contact:'9876543211' },
+  { name:'Mohan Verma',        type:'collector',   loc:'Bhatapara',     villages:'4', wkg:'734',  status:'Active',   contact:'9876543212' },
+  { name:'Priya Devi SHG',     type:'shg',         loc:'Abhanpur',      villages:'3', wkg:'892',  status:'Active',   contact:'9765432100' },
+  { name:'Nari Shakti SHG',    type:'shg',         loc:'Dharsiwa',      villages:'4', wkg:'1102', status:'Active',   contact:'9765432101' },
+  { name:'Ujjwala SHG',        type:'shg',         loc:'Rajim',         villages:'2', wkg:'456',  status:'Active',   contact:'9765432102' },
+  { name:'Raipur Depot',       type:'aggregator',  loc:'Raipur',        villages:'—', wkg:'4218', status:'Active',   contact:'0771123456' },
+  { name:'Bhatapara Centre',   type:'aggregator',  loc:'Bhatapara',     villages:'—', wkg:'2341', status:'Active',   contact:'0771123457' },
+  { name:'Baloda Aggreg.',     type:'aggregator',  loc:'Baloda Bazar',  villages:'—', wkg:'1876', status:'Capacity', contact:'0771123458' },
+  { name:'EcoRev Recyclers',   type:'recycler',    loc:'Raipur',        villages:'—', wkg:'8435', status:'Active',   contact:'0771198765' },
+  { name:'GreenCycle CG',      type:'recycler',    loc:'Bilaspur',      villages:'—', wkg:'5200', status:'Active',   contact:'0775987654' },
+  { name:'PlastiMart',         type:'recycler',    loc:'Durg',          villages:'—', wkg:'3100', status:'Seeking',  contact:'0788876543' },
+];
+
+const stops = [
+  { name:'Raipur',        est:160, collected:178, done:true  },
+  { name:'Abhanpur',      est:120, collected:134, done:true  },
+  { name:'Dharsiwa',      est:90,  collected:89,  done:true  },
+  { name:'Mandir Hasaud', est:140, collected:132, done:true  },
+  { name:'Rajim',         est:80,  collected:null,done:false },
+  { name:'Dhamtari',      est:60,  collected:null,done:false },
+];
+
+// ── NAVIGATION ──
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  const tabs = document.querySelectorAll('.nav-tab');
+  const map = {dashboard:0,map:1,collector:2,data:3,analytics:4};
+  if(map[id] !== undefined) tabs[map[id]].classList.add('active');
+  if(id==='analytics') initAnalytics();
+  if(id==='map') { initMap(); initSvgMap(); }
+  if(id==='data') initStakeTable();
+  if(id==='collector') initCollector();
+}
+
+// ── CHARTS (DASHBOARD) ──
+window.addEventListener('DOMContentLoaded', () => {
+  initDashCharts();
+  initPhoneTasks();
+  initStopsTable();
+});
+
+function initDashCharts() {
+  const weeks = ['W18','W19','W20','W21','W22','W23'];
+  new Chart(document.getElementById('trendChart'), {
+    type: 'bar',
+    data: {
+      labels: weeks,
+      datasets: [
+        { label:'PET', data:[820,940,890,1010,1150,1220], backgroundColor:'#2d8a5e', borderRadius:4 },
+        { label:'HDPE', data:[540,610,580,680,780,830], backgroundColor:'#5bc49a', borderRadius:4 },
+        { label:'Other', data:[380,420,400,450,510,540], backgroundColor:'#c8f0df', borderRadius:4 },
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
+      scales:{
+        x:{ grid:{display:false}, ticks:{color:'#5a6e63',font:{size:11}} },
+        y:{ grid:{color:'#e8f0eb'}, ticks:{color:'#5a6e63',font:{size:11}}, stacked:true }
+      }
+    }
+  });
+
+  new Chart(document.getElementById('typeChart'), {
+    type: 'doughnut',
+    data: {
+      labels:['PET Bottles','HDPE','Multilayer','Other'],
+      datasets:[{ data:[42,28,18,12], backgroundColor:['#2d8a5e','#f59e0b','#3b82f6','#e45c3a'], borderWidth:0, hoverOffset:4 }]
+    },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, cutout:'60%' }
+  });
+}
+
+// ── MAP SIDEBAR (village list) ──
+// ── SVG GIS MAP ──
+let svgMapInited = false;
+let routesDrawn = false;
+
+function initMap() {
+  const list = document.getElementById('village-list');
+  if (!list || list.children.length > 0) return;
+  [...villages].sort((a,b)=>b.kg-a.kg).forEach(v => {
+    const item = document.createElement('div');
+    item.className = 'village-item';
+    item.innerHTML = `<div class="village-dot" style="background:${v.color}"></div>
+      <div class="village-name">${v.name}</div>
+      <div class="village-kg">${v.kg} kg<br><span style="color:${v.color}">Route ${v.route}</span></div>`;
+    list.appendChild(item);
+  });
+}
+
+function initSvgMap() {
+  if(svgMapInited) return;
+  svgMapInited = true;
+  const svg = document.getElementById('map-svg');
+  if(!svg) return;
+
+  // Scale village coords to fit 900×480 viewBox (original were 0-900 x 0-700)
+  const scaleY = v => Math.round(v * 480/700);
+
+  // Background
+  let html = `<rect x="0" y="0" width="900" height="480" fill="#dde8dc"/>`;
+
+  // Subtle road network background
+  html += `<g stroke="#c5d8c0" stroke-width="1.5" fill="none" opacity="0.5">
+    <path d="M100,70 Q300,100 450,200 Q600,300 800,420"/>
+    <path d="M50,240 Q200,210 430,215 Q650,220 850,195"/>
+    <path d="M200,420 Q350,350 430,215 Q510,80 700,55"/>
+  </g>`;
+
+  // Route connections drawn after optimization — initially invisible
+  // Route A connections (green)
+  const routeA = villages.filter(v=>v.route==='A');
+  const aggRaipur = aggregationPoints[0];
+  let rA = `<g id="route-lines-A" opacity="0">`;
+  for(let i=0;i<routeA.length-1;i++){
+    rA += `<line x1="${routeA[i].x}" y1="${scaleY(routeA[i].y)}" x2="${routeA[i+1].x}" y2="${scaleY(routeA[i+1].y)}" stroke="#2d8a5e" stroke-width="2.5" stroke-dasharray="6 3"/>`;
+  }
+  // connect last to aggregation point
+  rA += `<line x1="${routeA[routeA.length-1].x}" y1="${scaleY(routeA[routeA.length-1].y)}" x2="${aggRaipur.x}" y2="${scaleY(aggRaipur.y)}" stroke="#2d8a5e" stroke-width="2.5" stroke-dasharray="6 3" opacity="0.7"/>`;
+  rA += `</g>`;
+
+  // Route B connections (blue)
+  const routeB = villages.filter(v=>v.route==='B');
+  const aggBhatapara = aggregationPoints[1];
+  let rB = `<g id="route-lines-B" opacity="0">`;
+  for(let i=0;i<routeB.length-1;i++){
+    rB += `<line x1="${routeB[i].x}" y1="${scaleY(routeB[i].y)}" x2="${routeB[i+1].x}" y2="${scaleY(routeB[i+1].y)}" stroke="#3b82f6" stroke-width="2.5" stroke-dasharray="6 3"/>`;
+  }
+  rB += `<line x1="${routeB[routeB.length-1].x}" y1="${scaleY(routeB[routeB.length-1].y)}" x2="${aggBhatapara.x}" y2="${scaleY(aggBhatapara.y)}" stroke="#3b82f6" stroke-width="2.5" stroke-dasharray="6 3" opacity="0.7"/>`;
+  rB += `</g>`;
+
+  // Route C connections (coral)
+  const routeC = villages.filter(v=>v.route==='C');
+  const aggWest = aggregationPoints[2];
+  let rC = `<g id="route-lines-C" opacity="0">`;
+  for(let i=0;i<routeC.length-1;i++){
+    rC += `<line x1="${routeC[i].x}" y1="${scaleY(routeC[i].y)}" x2="${routeC[i+1].x}" y2="${scaleY(routeC[i+1].y)}" stroke="#e45c3a" stroke-width="2.5" stroke-dasharray="6 3"/>`;
+  }
+  rC += `<line x1="${routeC[routeC.length-1].x}" y1="${scaleY(routeC[routeC.length-1].y)}" x2="${aggWest.x}" y2="${scaleY(aggWest.y)}" stroke="#e45c3a" stroke-width="2.5" stroke-dasharray="6 3" opacity="0.7"/>`;
+  rC += `</g>`;
+
+  // Aggregation → Recycler lines (dark green dashed)
+  let aggLines = `<g id="agg-lines" opacity="0">`;
+  aggregationPoints.forEach(a => {
+    aggLines += `<line x1="${a.x}" y1="${scaleY(a.y)}" x2="${recyclers[0].x}" y2="${scaleY(recyclers[0].y)}" stroke="#1a5c43" stroke-width="2" stroke-dasharray="5 4" opacity="0.75"/>`;
+  });
+  aggLines += `</g>`;
+
+  html += rA + rB + rC + aggLines;
+
+  // Village nodes (circles scaled by kg)
+  let nodes = '';
+  villages.forEach(v => {
+    const r = 8 + (v.kg / 342) * 9;
+    const sy = scaleY(v.y);
+    nodes += `<g class="map-node" style="cursor:pointer" onmouseenter="svgTip(event,'${v.name}','${v.kg} kg/wk · Route ${v.route}')" onmouseleave="hideSvgTip()">
+      <circle cx="${v.x}" cy="${sy}" r="${r+3}" fill="${v.color}" opacity="0.15"/>
+      <circle cx="${v.x}" cy="${sy}" r="${r}" fill="${v.color}" opacity="0.95" stroke="white" stroke-width="2"/>
+      <text x="${v.x}" y="${sy+r+13}" text-anchor="middle" font-size="10" fill="#0d3b2e" font-family="'Space Grotesk',sans-serif" font-weight="600">${v.name}</text>
+    </g>`;
+  });
+
+  // Aggregation point squares
+  let aggs = '';
+  aggregationPoints.forEach(a => {
+    const sy = scaleY(a.y);
+    aggs += `<g class="map-node" style="cursor:pointer" onmouseenter="svgTip(event,'${a.name}','Aggregation Point')" onmouseleave="hideSvgTip()">
+      <rect x="${a.x-14}" y="${sy-14}" width="28" height="28" rx="5" fill="#1a5c43" stroke="white" stroke-width="2" opacity="0.95"/>
+      <text x="${a.x}" y="${sy+5}" text-anchor="middle" font-size="13" fill="white">▲</text>
+      <text x="${a.x}" y="${sy+26}" text-anchor="middle" font-size="9" fill="#0d3b2e" font-family="'Space Grotesk',sans-serif" font-weight="600">${a.name}</text>
+    </g>`;
+  });
+
+  // Recycler node
+  const ry = scaleY(recyclers[0].y);
+  let rec = `<g class="map-node" style="cursor:pointer" onmouseenter="svgTip(event,'EcoRev Recyclers','District Recycler · EcoRev')" onmouseleave="hideSvgTip()">
+    <circle cx="${recyclers[0].x}" cy="${ry}" r="18" fill="#0d3b2e" stroke="white" stroke-width="2.5"/>
+    <text x="${recyclers[0].x}" y="${ry+5}" text-anchor="middle" font-size="14" fill="white">♻</text>
+    <text x="${recyclers[0].x}" y="${ry+28}" text-anchor="middle" font-size="9" fill="#0d3b2e" font-family="'Space Grotesk',sans-serif" font-weight="600">EcoRev Recyclers</text>
+  </g>`;
+
+  // Legend box
+  const leg = `
+    <rect x="18" y="16" width="190" height="108" rx="8" fill="white" opacity="0.92" stroke="#d4e8dc" stroke-width="1"/>
+    <text x="30" y="38" font-size="11" font-weight="700" fill="#0d3b2e" font-family="'Space Grotesk',sans-serif" letter-spacing="0.8">LEGEND</text>
+    <circle cx="30" cy="55" r="6" fill="#2d8a5e"/>
+    <text x="42" y="59" font-size="10" fill="#2d3d35" font-family="'Space Grotesk',sans-serif">Route A (6 stops)</text>
+    <circle cx="30" cy="74" r="6" fill="#3b82f6"/>
+    <text x="42" y="78" font-size="10" fill="#2d3d35" font-family="'Space Grotesk',sans-serif">Route B (8 stops)</text>
+    <circle cx="30" cy="93" r="6" fill="#e45c3a"/>
+    <text x="42" y="97" font-size="10" fill="#2d3d35" font-family="'Space Grotesk',sans-serif">Route C (4 stops)</text>
+    <rect x="23" y="106" width="12" height="12" rx="2" fill="#1a5c43"/>
+    <text x="42" y="116" font-size="10" fill="#2d3d35" font-family="'Space Grotesk',sans-serif">Aggregation Point</text>
+  `;
+
+  svg.innerHTML = html + nodes + aggs + rec + leg;
+}
+
+function animateRouteLines() {
+  ['A','B','C'].forEach((r, i) => {
+    setTimeout(() => {
+      const g = document.getElementById('route-lines-'+r);
+      if(g) {
+        g.style.transition = 'opacity 0.5s';
+        g.style.opacity = '1';
+        // Animate each line stroke-dashoffset
+        g.querySelectorAll('line').forEach((ln, j) => {
+          ln.style.strokeDasharray = '600';
+          ln.style.strokeDashoffset = '600';
+          ln.style.transition = `stroke-dashoffset ${0.8+j*0.1}s ease ${j*0.1}s`;
+          setTimeout(() => ln.style.strokeDashoffset = '0', 50);
+        });
+      }
+    }, i * 300);
+  });
+  setTimeout(() => {
+    const ag = document.getElementById('agg-lines');
+    if(ag) { ag.style.transition = 'opacity 0.6s'; ag.style.opacity = '1'; }
+  }, 1200);
+}
+
+function svgTip(e, name, sub) {
+  const tt = document.getElementById('map-tooltip');
+  if(!tt) return;
+  tt.innerHTML = `<strong style="font-family:'Space Grotesk',sans-serif">${name}</strong><br><span style="font-size:11px;opacity:0.8">${sub}</span>`;
+  const cont = document.querySelector('.map-view');
+  if(!cont) return;
+  const rect = cont.getBoundingClientRect();
+  tt.style.left = (e.clientX - rect.left + 12) + 'px';
+  tt.style.top = (e.clientY - rect.top + 8) + 'px';
+  tt.classList.add('show');
+}
+function hideSvgTip() {
+  const tt = document.getElementById('map-tooltip');
+  if(tt) tt.classList.remove('show');
+}
+
+function toggleMapView(mode) {
+  const svgPanel = document.querySelector('#map-svg').parentElement;
+  const threePanel = document.getElementById('three-panel');
+  if(mode === '3d') {
+    svgPanel.style.flex = '0 0 0'; svgPanel.style.overflow = 'hidden';
+    threePanel.style.height = '100%'; threePanel.style.flex = '1';
+  } else {
+    svgPanel.style.flex = '1'; svgPanel.style.overflow = '';
+    threePanel.style.height = '260px'; threePanel.style.flex = '';
+  }
+  document.getElementById('btn-2d').style.background = mode==='2d' ? '#0d3b2e' : 'rgba(255,255,255,0.9)';
+  document.getElementById('btn-2d').style.color = mode==='2d' ? '#5bc49a' : '#0d3b2e';
+  document.getElementById('btn-3d').style.background = mode==='3d' ? '#0d3b2e' : 'rgba(255,255,255,0.9)';
+  document.getElementById('btn-3d').style.color = mode==='3d' ? '#5bc49a' : '#0d3b2e';
+}
+
+function updateCap(v) { document.getElementById('cap-val').textContent = v + ' kg'; }
+function updateFuel(v) { document.getElementById('fuel-val').textContent = '₹' + v; }
+function updateStops(v) { document.getElementById('stops-val').textContent = v; }
+
+function runOptimizer() {
+  const stops = document.getElementById('stops-val').textContent;
+  const dist = (58 + Math.random()*20).toFixed(1);
+  const fuel = (820 + Math.random()*200).toFixed(0);
+  const waste = (650 + Math.random()*150).toFixed(0);
+  const save = (18 + Math.random()*12).toFixed(0);
+  const co2 = (save * 0.4).toFixed(1);
+
+  document.getElementById('r-dist').textContent = dist + ' km';
+  document.getElementById('r-fuel').textContent = '₹' + fuel;
+  document.getElementById('r-waste').textContent = waste + ' kg';
+  document.getElementById('r-stops').textContent = stops + ' stops';
+  document.getElementById('r-save').textContent = save + '%';
+  document.getElementById('r-co2').textContent = co2 + ' kg';
+  document.getElementById('route-result').classList.add('show');
+
+  // Animate village list highlights
+  document.querySelectorAll('.village-item').forEach((item, i) => {
+    setTimeout(() => item.classList.add('selected'), i * 80);
+    setTimeout(() => item.classList.remove('selected'), i * 80 + 700);
+  });
+
+  // Animate SVG route lines
+  animateRouteLines();
+
+  // Launch 3D navigation
+  setTimeout(() => {
+    if (typeof window._startThreeNav === 'function') {
+      window._startThreeNav();
+    } else {
+      const ov = document.getElementById('nav-start-overlay');
+      const eta = document.getElementById('nav-eta');
+      if(ov) ov.style.display = 'none';
+      if(eta) eta.style.display = 'block';
+    }
+  }, 1000);
+}
+
+
+// ── COLLECTOR ──
+function initPhoneTasks() {
+  const tasksEl = document.getElementById('phone-tasks');
+  tasksEl.innerHTML = '';
+  stops.slice(0,4).forEach(s => {
+    tasksEl.innerHTML += `<div class="task-card ${s.done?'done':''}">
+      <div class="task-card-head">
+        <div class="village-dot" style="background:${s.done?'#2d8a5e':'#d1d5db'};width:8px;height:8px;border-radius:50%;flex-shrink:0"></div>
+        <div class="task-village">${s.name}</div>
+        <span style="font-size:10px;background:${s.done?'#d1fae5':'#f3f4f6'};color:${s.done?'#065f46':'#6b7280'};padding:2px 7px;border-radius:99px;font-weight:600">${s.done?'✓ Done':'Pending'}</span>
+      </div>
+      <div class="task-meta">
+        <span>Est: ${s.est} kg</span>
+        ${s.done?`<span style="color:#2d8a5e">Got: ${s.collected} kg</span>`:'<span>Not collected yet</span>'}
+      </div>
+      ${s.done?`<div class="task-progress"><div class="task-progress-fill" style="width:${Math.min((s.collected/s.est)*100,100)}%"></div></div>`:''}
+    </div>`;
+  });
+}
+
+function initCollector() {
+  initStopsTable();
+}
+
+function initStopsTable() {
+  const tbody = document.getElementById('stops-table');
+  if(!tbody) return;
+  tbody.innerHTML = '';
+  stops.forEach(s => {
+    tbody.innerHTML += `<tr>
+      <td>${s.name}</td>
+      <td style="font-family:var(--mono)">${s.est} kg</td>
+      <td style="font-family:var(--mono)">${s.collected !== null ? s.collected + ' kg' : '—'}</td>
+      <td><span class="badge ${s.done?'badge-green':'badge-amber'}">${s.done?'Done':'Pending'}</span></td>
+      <td>${!s.done?`<button class="btn btn-sm btn-outline" onclick="openScan()">Log</button>`:'—'}</td>
+    </tr>`;
+  });
+}
+
+function openScan() { document.getElementById('scan-modal').classList.add('show'); }
+function closeScan() { document.getElementById('scan-modal').classList.remove('show'); }
+function submitScan() {
+  const kg = parseInt(document.getElementById('scan-kg').value) || 0;
+  const village = document.getElementById('scan-village').value;
+  const pendingStop = stops.find(s => s.name === village && !s.done);
+  if(pendingStop) {
+    pendingStop.collected = kg;
+    pendingStop.done = true;
+  }
+  const prev = parseInt(document.getElementById('col-today').textContent.replace(',','')) || 0;
+  document.getElementById('col-today').textContent = (prev + kg).toLocaleString();
+  document.getElementById('col-earn').textContent = Math.round((prev + kg) * 0.5).toLocaleString();
+  closeScan();
+  initStopsTable();
+  initPhoneTasks();
+  const done = stops.filter(s=>s.done).length;
+  document.getElementById('phone-progress').textContent = done + ' / ' + stops.length + ' done';
+  document.getElementById('phone-bar').style.width = Math.round((done/stops.length)*100) + '%';
+}
+
+// ── STAKEHOLDERS ──
+let currentFilter = 'all';
+function initStakeTable() {
+  filterStake(currentFilter, null);
+}
+function filterStake(type, btn) {
+  currentFilter = type;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+
+  const typeColors = { collector:'badge-blue', shg:'badge-green', aggregator:'badge-amber', recycler:'badge-red' };
+  const statusColors = { Active:'badge-green', Delayed:'badge-amber', Capacity:'badge-red', Seeking:'badge-blue' };
+
+  const rows = stakeholders.filter(s => type === 'all' || s.type === type);
+  const tbody = document.getElementById('stake-tbody');
+  tbody.innerHTML = rows.map(s => `<tr>
+    <td style="font-weight:500">${s.name}</td>
+    <td><span class="badge ${typeColors[s.type]||'badge-blue'}">${s.type}</span></td>
+    <td>${s.loc}</td>
+    <td style="font-family:var(--mono)">${s.villages}</td>
+    <td style="font-family:var(--mono);font-weight:500">${s.wkg} kg</td>
+    <td><span class="badge ${statusColors[s.status]||'badge-green'}">${s.status}</span></td>
+    <td style="font-family:var(--mono);font-size:12px;color:var(--ink-light)">${s.contact}</td>
+  </tr>`).join('');
+}
+
+// ── ANALYTICS ──
+let analyticsInited = false;
+function initAnalytics() {
+  if(analyticsInited) return;
+  analyticsInited = true;
+
+  const months = ['Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr','May','Jun'];
+  new Chart(document.getElementById('monthChart'), {
+    type:'line',
+    data:{
+      labels:months,
+      datasets:[{
+        label:'Collection (kg)',
+        data:[8200,9400,10100,11500,12300,13800,14200,15100,15800,16200,16500,16800],
+        borderColor:'#2d8a5e', backgroundColor:'rgba(45,138,94,0.08)',
+        fill:true, tension:0.4, pointRadius:3, pointBackgroundColor:'#2d8a5e'
+      }]
+    },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{ x:{grid:{display:false},ticks:{color:'#5a6e63',font:{size:10}}}, y:{grid:{color:'#e8f0eb'},ticks:{color:'#5a6e63',font:{size:10}}} }
+    }
+  });
+
+  new Chart(document.getElementById('effChart'), {
+    type:'line',
+    data:{
+      labels:months,
+      datasets:[
+        { label:'AI Route', data:[51,55,58,60,63,66,68,70,73,75,77,78], borderColor:'#2d8a5e', fill:false, tension:0.3, pointRadius:3, pointBackgroundColor:'#2d8a5e' },
+        { label:'Manual', data:[50,50,51,51,52,52,52,53,53,53,54,54], borderColor:'#d1d5db', borderDash:[4,4], fill:false, tension:0, pointRadius:0 }
+      ]
+    },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ display:true, labels:{ boxWidth:10, font:{size:11}, color:'#5a6e63' } } },
+      scales:{ x:{grid:{display:false},ticks:{color:'#5a6e63',font:{size:10}}}, y:{grid:{color:'#e8f0eb'},ticks:{color:'#5a6e63',font:{size:10},callback:v=>v+'%'}} }
+    }
+  });
+
+  new Chart(document.getElementById('villageChart'), {
+    type:'bar',
+    data:{
+      labels: villages.slice(0,10).map(v=>v.name),
+      datasets:[{ data: villages.slice(0,10).map(v=>v.kg), backgroundColor: villages.slice(0,10).map(v=>v.color), borderRadius:4 }]
+    },
+    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{ x:{grid:{color:'#e8f0eb'},ticks:{color:'#5a6e63',font:{size:10}}}, y:{grid:{display:false},ticks:{color:'#5a6e63',font:{size:10}}} }
+    }
+  });
+
+  new Chart(document.getElementById('econChart'), {
+    type:'doughnut',
+    data:{
+      labels:['SHG Earnings','Collector Wages','Recycler Revenue','Govt Savings','Platform Ops'],
+      datasets:[{ data:[28,22,35,10,5], backgroundColor:['#2d8a5e','#5bc49a','#f59e0b','#3b82f6','#e45c3a'], borderWidth:0, hoverOffset:4 }]
+    },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'right',labels:{boxWidth:10,font:{size:10},color:'#5a6e63'}}}, cutout:'55%' }
+  });
+}
+
+// ─────────────────────────────────────────
+// LANGUAGE & TRANSLATION SYSTEM
+// ─────────────────────────────────────────
+let currentLang = 'en';
+window._getLang = () => currentLang;
+
+const langs = {
+  en: { label: 'EN', name: 'English' },
+  hi: { label: 'हि', name: 'हिंदी' },
+  cg: { label: 'छग', name: 'छत्तीसगढ़ी' },
+  mr: { label: 'मर', name: 'मराठी' },
+  gu: { label: 'ગુ', name: 'ગુજરાતી' },
+  bn: { label: 'বা', name: 'বাংলা' },
+};
+
+const i18n = {
+  en: {
+    nav_dashboard:'Dashboard', nav_map:'Route Map', nav_collector:'Collector App',
+    nav_stakeholders:'Stakeholders', nav_analytics:'Analytics', nav_user:'Dist. Coordinator · Raipur',
+    dash_title:'Raipur District Overview',
+    dash_sub:'Chhattisgarh · Week 23 · 12 Jun 2025 — Real-time waste collection intelligence',
+    m_plastic:'Plastic Collected', m_villages:'Villages Covered', m_efficiency:'Route Efficiency', m_savings:'Cost Savings',
+    c_trend:'Weekly Collection Trend', c_bytype:'Collection by Type', c_topvillages:'Top Villages',
+    c_collectors:'Active Collectors', c_economy:'Economy Model',
+    sub_trend:'Plastic collected by type (kg)', sub_bytype:'Current week breakdown',
+    ro_title:'Route Optimizer', ro_capacity:'Vehicle Capacity', ro_fuel:'Fuel Budget',
+    ro_stops:'Max Stops / Route', ro_btn:'⚡ Run AI Optimizer',
+    rr_title:'Optimized Route · Route A', rr_dist:'Total distance', rr_fuel:'Fuel estimate',
+    rr_waste:'Waste collected', rr_save:'Savings vs prev.', rr_co2:'CO₂ avoided',
+    col_myroute:'My Route Today', col_today:'Collected Today', col_earn:'Earnings Today',
+    col_title:'Collector Interface',
+    st_title:'Stakeholder Network',
+    an_title:'Analytics & Insights', an_monthly:'Monthly Collection', an_routesave:'Avg Route Saving',
+    an_co2:'CO₂ Avoided', an_recycle:'Recycling Rate',
+    nav3d_title:'3D Live Navigation', nav3d_btn:'▶ Start Navigation',
+    scan_title:'Log Collection', scan_sub:'Enter waste collected at this stop',
+    scan_village:'Village', scan_weight:'Weight Collected (kg)', scan_type:'Plastic Type',
+    scan_condition:'Condition', scan_submit:'✓ Submit Log',
+    eco_shg:'SHG Earnings', eco_recycler:'Recycler Revenue', eco_jobs:'Youth Jobs Created',
+    seg_title:'Waste Type Segregation Guide',
+  },
+  hi: {
+    nav_dashboard:'डैशबोर्ड', nav_map:'रूट मैप', nav_collector:'संग्रहकर्ता ऐप',
+    nav_stakeholders:'हितधारक', nav_analytics:'विश्लेषण', nav_user:'जिला समन्वयक · रायपुर',
+    dash_title:'रायपुर जिला अवलोकन',
+    dash_sub:'छत्तीसगढ़ · सप्ताह 23 · 12 जून 2025 — रीयल-टाइम अपशिष्ट संग्रह',
+    m_plastic:'प्लास्टिक संग्रह', m_villages:'ग्राम कवर', m_efficiency:'रूट दक्षता', m_savings:'लागत बचत',
+    c_trend:'साप्ताहिक संग्रह ट्रेंड', c_bytype:'प्रकार अनुसार संग्रह', c_topvillages:'शीर्ष ग्राम',
+    c_collectors:'सक्रिय संग्रहकर्ता', c_economy:'अर्थव्यवस्था मॉडल',
+    sub_trend:'प्रकार अनुसार प्लास्टिक (किग्रा)', sub_bytype:'वर्तमान सप्ताह',
+    ro_title:'रूट ऑप्टिमाइज़र', ro_capacity:'वाहन क्षमता', ro_fuel:'ईंधन बजट',
+    ro_stops:'अधिकतम पड़ाव / रूट', ro_btn:'⚡ AI ऑप्टिमाइज़र चलाएं',
+    rr_title:'अनुकूलित रूट · रूट A', rr_dist:'कुल दूरी', rr_fuel:'ईंधन अनुमान',
+    rr_waste:'संग्रहित अपशिष्ट', rr_save:'पिछली बचत', rr_co2:'CO₂ बचा',
+    col_myroute:'आज का रूट', col_today:'आज संग्रह', col_earn:'आज की कमाई',
+    col_title:'संग्रहकर्ता इंटरफ़ेस',
+    st_title:'हितधारक नेटवर्क',
+    an_title:'विश्लेषण और अंतर्दृष्टि', an_monthly:'मासिक संग्रह', an_routesave:'औसत रूट बचत',
+    an_co2:'CO₂ बचाव', an_recycle:'पुनर्चक्रण दर',
+    nav3d_title:'3D लाइव नेविगेशन', nav3d_btn:'▶ नेविगेशन शुरू करें',
+    scan_title:'संग्रह लॉग करें', scan_sub:'इस पड़ाव पर संग्रहित अपशिष्ट दर्ज करें',
+    scan_village:'ग्राम', scan_weight:'संग्रहित वजन (किग्रा)', scan_type:'प्लास्टिक प्रकार',
+    scan_condition:'स्थिति', scan_submit:'✓ लॉग सबमिट करें',
+    eco_shg:'SHG आय', eco_recycler:'पुनर्चक्लक राजस्व', eco_jobs:'युवा रोजगार',
+    seg_title:'अपशिष्ट पृथक्करण गाइड',
+  },
+  cg: {
+    nav_dashboard:'डैशबोर्ड', nav_map:'रूट नक्सा', nav_collector:'संग्रहकर्ता ऐप',
+    nav_stakeholders:'हितधारक', nav_analytics:'जानकारी', nav_user:'जिला समन्वयक · रायपुर',
+    dash_title:'रायपुर जिला झलक',
+    dash_sub:'छत्तीसगढ़ · सप्ताह 23 · 12 जून 2025 — लइव कचरा संग्रह डेटा',
+    m_plastic:'प्लास्टिक संग्रह', m_villages:'गाँव कवर', m_efficiency:'रूट दक्षता', m_savings:'खरचा बचत',
+    c_trend:'साप्ताहिक संग्रह ट्रेंड', c_bytype:'प्रकार अनुसार', c_topvillages:'शीर्ष गाँव',
+    c_collectors:'सक्रिय संग्रहकर्ता', c_economy:'अर्थव्यवस्था मॉडल',
+    sub_trend:'प्रकार अनुसार प्लास्टिक (किग्रा)', sub_bytype:'ए हफ्ता के आँकड़ा',
+    ro_title:'रूट ऑप्टिमाइज़र', ro_capacity:'गाड़ी के क्षमता', ro_fuel:'तेल बजट',
+    ro_stops:'अधिकतम पड़ाव', ro_btn:'⚡ AI रूट चलाव',
+    rr_title:'सबसे बढ़िया रूट · A', rr_dist:'कुल दूरी', rr_fuel:'तेल अनुमान',
+    rr_waste:'संग्रहित कचरा', rr_save:'पहिले से बचत', rr_co2:'CO₂ बचाव',
+    col_myroute:'आज के रूट', col_today:'आज संग्रह', col_earn:'आज कमाई',
+    col_title:'संग्रहकर्ता इंटरफ़ेस',
+    st_title:'हितधारक नेटवर्क',
+    an_title:'जानकारी अउ विश्लेषण', an_monthly:'महीना संग्रह', an_routesave:'रूट बचत',
+    an_co2:'CO₂ बचाव', an_recycle:'पुनर्चक्रण दर',
+    nav3d_title:'3D नेविगेशन', nav3d_btn:'▶ नेविगेशन शुरू करव',
+    scan_title:'संग्रह लॉग करव', scan_sub:'ए पड़ाव में संग्रहित कचरा दर्ज करव',
+    scan_village:'गाँव', scan_weight:'वजन (किग्रा)', scan_type:'प्लास्टिक प्रकार',
+    scan_condition:'हालत', scan_submit:'✓ लॉग सेव करव',
+    eco_shg:'SHG कमाई', eco_recycler:'रिसाइकलर आमदनी', eco_jobs:'जवान रोजगार',
+    seg_title:'कचरा अलग करे के गाइड',
+  },
+  mr: {
+    nav_dashboard:'डॅशबोर्ड', nav_map:'मार्ग नकाशा', nav_collector:'संग्राहक अ‍ॅप',
+    nav_stakeholders:'भागधारक', nav_analytics:'विश्लेषण', nav_user:'जिल्हा समन्वयक · रायपूर',
+    dash_title:'रायपूर जिल्हा आढावा',
+    dash_sub:'छत्तीसगड · आठवडा 23 · 12 जून 2025 — रिअल-टाइम कचरा संग्रह',
+    m_plastic:'प्लास्टिक संग्रह', m_villages:'गावे समाविष्ट', m_efficiency:'मार्ग कार्यक्षमता', m_savings:'खर्च बचत',
+    c_trend:'साप्ताहिक संग्रह ट्रेंड', c_bytype:'प्रकारानुसार संग्रह', c_topvillages:'शीर्ष गावे',
+    c_collectors:'सक्रिय संग्राहक', c_economy:'अर्थव्यवस्था मॉडेल',
+    sub_trend:'प्रकारानुसार प्लास्टिक (किलो)', sub_bytype:'या आठवड्याचा तपशील',
+    ro_title:'मार्ग ऑप्टिमायझर', ro_capacity:'वाहन क्षमता', ro_fuel:'इंधन बजेट',
+    ro_stops:'कमाल थांबे / मार्ग', ro_btn:'⚡ AI ऑप्टिमायझर चालवा',
+    rr_title:'इष्टतम मार्ग · मार्ग A', rr_dist:'एकूण अंतर', rr_fuel:'इंधन अंदाज',
+    rr_waste:'संकलित कचरा', rr_save:'मागील बचत', rr_co2:'CO₂ वाचवला',
+    col_myroute:'आजचा मार्ग', col_today:'आज संग्रह', col_earn:'आजची कमाई',
+    col_title:'संग्राहक इंटरफेस',
+    st_title:'भागधारक नेटवर्क',
+    an_title:'विश्लेषण आणि अंतर्दृष्टी', an_monthly:'मासिक संग्रह', an_routesave:'सरासरी मार्ग बचत',
+    an_co2:'CO₂ टाळला', an_recycle:'पुनर्वापर दर',
+    nav3d_title:'3D लाइव्ह नेव्हिगेशन', nav3d_btn:'▶ नेव्हिगेशन सुरू करा',
+    scan_title:'संग्रह नोंदवा', scan_sub:'या थांब्यावर संकलित कचरा प्रविष्ट करा',
+    scan_village:'गाव', scan_weight:'वजन (किलो)', scan_type:'प्लास्टिक प्रकार',
+    scan_condition:'स्थिती', scan_submit:'✓ लॉग सादर करा',
+    eco_shg:'SHG कमाई', eco_recycler:'पुनर्वापरकर्ता महसूल', eco_jobs:'युवा रोजगार',
+    seg_title:'कचरा वर्गीकरण मार्गदर्शक',
+  },
+  gu: {
+    nav_dashboard:'ડૅશબૉર્ડ', nav_map:'રૂટ નક્શો', nav_collector:'સંગ્રાહક ઍપ',
+    nav_stakeholders:'હિસ્સેદારો', nav_analytics:'વિશ્લેષણ', nav_user:'જિલ્લા સંયોજક · રાયપુર',
+    dash_title:'રાયપુર જિલ્લો અવલોકન',
+    dash_sub:'છત્તીસગઢ · સપ્તાહ 23 · 12 જૂન 2025 — રીઅલ-ટાઇમ કચરો સંગ્રહ',
+    m_plastic:'પ્લાસ્ટિક સંગ્રહ', m_villages:'ગામો આવ્યા', m_efficiency:'રૂટ કાર્યક્ષમતા', m_savings:'ખર્ચ બચત',
+    c_trend:'સાપ્તાહિક સંગ્રહ ટ્રેન્ડ', c_bytype:'પ્રકાર પ્રમાણે', c_topvillages:'ટોચના ગામો',
+    c_collectors:'સક્રિય સંગ્રાહક', c_economy:'અર્થ મૉડલ',
+    sub_trend:'પ્રકાર પ્રમાણે પ્લાસ્ટિક (કિગ્રા)', sub_bytype:'આ સપ્તાહ',
+    ro_title:'રૂટ ઓપ્ટિમાઇઝર', ro_capacity:'વાહન ક્ષમતા', ro_fuel:'ઇંધણ બજેટ',
+    ro_stops:'મહત્તમ સ્ટૉપ / રૂટ', ro_btn:'⚡ AI ઓપ્ટિમાઇઝર ચલાવો',
+    rr_title:'ઑપ્ટિમાઇઝ્ડ રૂટ · A', rr_dist:'કુલ અંતર', rr_fuel:'ઇંધણ અંદાજ',
+    rr_waste:'સંગ્રહિત કચરો', rr_save:'અગાઉ કરતાં બચત', rr_co2:'CO₂ બચ્યો',
+    col_myroute:'આજનો રૂટ', col_today:'આજ સંગ્રહ', col_earn:'આજની કમાણી',
+    col_title:'સંગ્રાહક ઇન્ટરફેસ',
+    st_title:'હિસ્સેદાર નેટવર્ક',
+    an_title:'વિશ્લેષણ અને આંતરદૃષ્ટિ', an_monthly:'માસિક સંગ્રહ', an_routesave:'સરેરાશ રૂટ બચત',
+    an_co2:'CO₂ ટળ્યો', an_recycle:'પુનઃઉપયોગ દર',
+    nav3d_title:'3D લાઇવ નેવિગેશન', nav3d_btn:'▶ નેવિગેશન શરૂ કરો',
+    scan_title:'સંગ્રહ નોંધો', scan_sub:'આ સ્ટૉપ પર એકઠો કરેલ કચરો દાખલ કરો',
+    scan_village:'ગામ', scan_weight:'વજન (કિગ્રા)', scan_type:'પ્લાસ્ટિક પ્રકાર',
+    scan_condition:'સ્થિતિ', scan_submit:'✓ લૉગ સબમિટ કરો',
+    eco_shg:'SHG આવક', eco_recycler:'રિસાઇકલર આવક', eco_jobs:'યુવા રોજગાર',
+    seg_title:'કચરો અલગ કરવાની માર્ગદર્શિકા',
+  },
+  bn: {
+    nav_dashboard:'ড্যাশবোর্ড', nav_map:'রুট ম্যাপ', nav_collector:'সংগ্রাহক অ্যাপ',
+    nav_stakeholders:'স্টেকহোল্ডার', nav_analytics:'বিশ্লেষণ', nav_user:'জেলা সমন্বয়কারী · রায়পুর',
+    dash_title:'রায়পুর জেলা সারসংক্ষেপ',
+    dash_sub:'ছত্তীসগড় · সপ্তাহ 23 · 12 জুন 2025 — রিয়েল-টাইম বর্জ্য সংগ্রহ',
+    m_plastic:'প্লাস্টিক সংগ্রহ', m_villages:'গ্রাম কভার', m_efficiency:'রুট দক্ষতা', m_savings:'খরচ সাশ্রয়',
+    c_trend:'সাপ্তাহিক সংগ্রহ ট্রেন্ড', c_bytype:'ধরন অনুসারে', c_topvillages:'শীর্ষ গ্রাম',
+    c_collectors:'সক্রিয় সংগ্রাহক', c_economy:'অর্থনীতি মডেল',
+    sub_trend:'ধরন অনুসারে প্লাস্টিক (কেজি)', sub_bytype:'এই সপ্তাহের বিবরণ',
+    ro_title:'রুট অপ্টিমাইজার', ro_capacity:'যানবাহন ক্ষমতা', ro_fuel:'জ্বালানি বাজেট',
+    ro_stops:'সর্বোচ্চ স্টপ / রুট', ro_btn:'⚡ AI অপ্টিমাইজার চালান',
+    rr_title:'অপ্টিমাইজড রুট · A', rr_dist:'মোট দূরত্ব', rr_fuel:'জ্বালানি অনুমান',
+    rr_waste:'সংগৃহীত বর্জ্য', rr_save:'পূর্বের চেয়ে সাশ্রয়', rr_co2:'CO₂ বাঁচানো',
+    col_myroute:'আজকের রুট', col_today:'আজ সংগ্রহ', col_earn:'আজকের আয়',
+    col_title:'সংগ্রাহক ইন্টারফেস',
+    st_title:'স্টেকহোল্ডার নেটওয়ার্ক',
+    an_title:'বিশ্লেষণ ও অন্তর্দৃষ্টি', an_monthly:'মাসিক সংগ্রহ', an_routesave:'গড় রুট সাশ্রয়',
+    an_co2:'CO₂ এড়ানো', an_recycle:'পুনর্ব্যবহার হার',
+    nav3d_title:'3D লাইভ নেভিগেশন', nav3d_btn:'▶ নেভিগেশন শুরু করুন',
+    scan_title:'সংগ্রহ লগ করুন', scan_sub:'এই স্টপে সংগৃহীত বর্জ্য লিখুন',
+    scan_village:'গ্রাম', scan_weight:'ওজন (কেজি)', scan_type:'প্লাস্টিকের ধরন',
+    scan_condition:'অবস্থা', scan_submit:'✓ লগ জমা দিন',
+    eco_shg:'SHG আয়', eco_recycler:'পুনর্ব্যবহারকারী রাজস্ব', eco_jobs:'যুব কর্মসংস্থান',
+    seg_title:'বর্জ্য বাছাই গাইড',
+  },
+};
+
+function selectLang(lang) {
+  currentLang = lang;
+  // Hide overlay
+  const overlay = document.getElementById('lang-overlay');
+  if(overlay) { overlay.style.opacity='0'; overlay.style.transition='opacity 0.4s'; setTimeout(()=>overlay.style.display='none',400); }
+  // Hide picker
+  const picker = document.getElementById('lang-picker');
+  if(picker) picker.classList.remove('show');
+  // Update label
+  const lbl = document.getElementById('lang-label');
+  if(lbl) lbl.textContent = langs[lang].label;
+  // Update picker active state
+  document.querySelectorAll('.lang-pick-item').forEach((el,i) => {
+    const langKeys = ['hi','en','cg','mr','gu','bn'];
+    el.classList.toggle('active', langKeys[i] === lang);
+  });
+  applyTranslations();
+}
+
+function applyTranslations() {
+  const dict = i18n[currentLang] || i18n.en;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if(dict[key]) {
+      const badge = el.querySelector('.nav-badge');
+      if(badge) {
+        // preserve badge, update text node only
+        const txt = el.childNodes[0];
+        if(txt && txt.nodeType === 3) txt.textContent = dict[key] + ' ';
+        else el.insertBefore(document.createTextNode(dict[key] + ' '), el.firstChild);
+      } else {
+        el.textContent = dict[key];
+      }
+    }
+  });
+  // Update phone header
+  const phoneH = document.querySelector('.phone-header p');
+  if(phoneH) phoneH.textContent = currentLang==='hi'?'राम कुमार · रूट A · 6 पड़ाव':currentLang==='cg'?'राम कुमार · रूट A · 6 ठउर':'Ram Kumar · Route A · 6 stops';
+  // Update 3D overlay text (not data-i18n due to being in module script)
+  const navTitle = document.querySelector('#nav-start-overlay div:first-child');
+  if(navTitle) navTitle.textContent = (i18n[currentLang]||i18n.en).nav3d_title;
+  const navBtn = document.getElementById('nav-start-btn');
+  if(navBtn) navBtn.textContent = (i18n[currentLang]||i18n.en).nav3d_btn;
+}
+
+function toggleLangPicker() {
+  document.getElementById('lang-picker').classList.toggle('show');
+}
+// Close picker when clicking outside
+document.addEventListener('click', e => {
+  if(!e.target.closest('#lang-picker') && !e.target.closest('#lang-toggle-btn')) {
+    const p = document.getElementById('lang-picker');
+    if(p) p.classList.remove('show');
+  }
+});
+
+</script>
+</body>
+</html>
